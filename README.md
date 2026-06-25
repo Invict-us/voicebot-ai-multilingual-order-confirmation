@@ -2,7 +2,7 @@
 
 **Multilingual AI Voice Bot for Automated Order Confirmation**
 
-Built for the Automaton AI Infosystem Hackathon — handles outbound calls in English, Hindi, Kannada, Marathi & Telugu using Twilio + FastAPI + optional OpenAI GPT-4o.
+handles outbound calls in English, Hindi, Kannada, Marathi & Telugu using Twilio + FastAPI + optional OpenAI GPT-4o.
 
 ---
 
@@ -134,7 +134,3 @@ Server starts at `http://localhost:8000`
                         ↓
             /webhook/status (call completed/failed/busy)
 ```
-
----
-
-**Made for Hackathon 2024** · ADVIT™ AI Labs × AutomatonAI
