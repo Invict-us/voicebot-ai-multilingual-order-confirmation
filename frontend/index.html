@@ -1306,6 +1306,22 @@ footer {
 }
 .api-status.online  { color: var(--gold); border-color: rgba(230, 192, 123, 0.3); background: rgba(230, 192, 123, 0.05); }
 .api-status.offline { color: var(--cancelled); border-color: rgba(139, 58, 58, 0.3); background: rgba(139, 58, 58, 0.05); }
+
+/* ═══════════════════════════════════════════════════════
+   WATERMARK
+═══════════════════════════════════════════════════════ */
+.watermark {
+  position: fixed;
+  bottom: 12px;
+  right: 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text3);
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 9999;
+  letter-spacing: 1.5px;
+}
 </style>
 </head>
 <body>
@@ -1640,8 +1656,7 @@ footer {
     <span>VoiceBot AI</span>
     <span class="sep">·</span>
     <span>Built with FastAPI + Twilio + Whisper</span>
-    <span class="sep">·</span>
-    <span>Made for Hackathon 2024</span>
+
   </div>
 </footer>
 
@@ -2161,5 +2176,7 @@ document.addEventListener('DOMContentLoaded', () => {
   addLog('🔌', `API endpoint: <strong>${API}</strong>`);
 });
 </script>
+
+<div class="watermark">CRAFTED BY INVIVTUS</div>
 </body>
 </html>
