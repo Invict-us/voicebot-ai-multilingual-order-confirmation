@@ -1,0 +1,2181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoiceBot AI — Multilingual Order Confirmation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════════════ */
+:root {
+  --bg:          #080c14;
+  --bg2:         #0d1320;
+  --bg3:         #111826;
+  --surface:     #141d2e;
+  --surface2:    #1a2540;
+  --border:      #1e2d45;
+  --border2:     #243352;
+
+  --cyan:        #00e5ff;
+  --cyan-dim:    #00b8cc;
+  --violet:      #7c4dff;
+  --violet-dim:  #5c35cc;
+  --emerald:     #00e676;
+  --amber:       #ffab00;
+  --rose:        #ff4081;
+  --sky:         #40c4ff;
+
+  --text:        #e8f0fe;
+  --text2:       #8ba3c7;
+  --text3:       #4a6080;
+
+  --font-display: 'Syne', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --font-body:    'Inter', sans-serif;
+
+  --r:  8px;
+  --r2: 14px;
+  --r3: 20px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   GRID BACKGROUND
+═══════════════════════════════════════════════════════ */
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   GLOW ORBS
+═══════════════════════════════════════════════════════ */
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: 0;
+  animation: drift 20s ease-in-out infinite;
+}
+.orb-1 { width: 600px; height: 600px; background: rgba(0,229,255,0.05); top: -200px; left: -200px; animation-delay: 0s; }
+.orb-2 { width: 500px; height: 500px; background: rgba(124,77,255,0.07); bottom: -150px; right: -150px; animation-delay: -8s; }
+.orb-3 { width: 400px; height: 400px; background: rgba(0,230,118,0.04); top: 40%; left: 40%; animation-delay: -4s; }
+
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(30px, -20px) scale(1.05); }
+  66%       { transform: translate(-20px, 30px) scale(0.95); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════════════════ */
+#app { position: relative; z-index: 1; }
+.container { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+
+/* ═══════════════════════════════════════════════════════
+   HEADER / NAV
+═══════════════════════════════════════════════════════ */
+header {
+  border-bottom: 1px solid var(--border);
+  background: rgba(8,12,20,0.8);
+  backdrop-filter: blur(20px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 0 20px rgba(0,229,255,0.3);
+  animation: pulse-logo 3s ease-in-out infinite;
+}
+
+@keyframes pulse-logo {
+  0%, 100% { box-shadow: 0 0 20px rgba(0,229,255,0.3); }
+  50%       { box-shadow: 0 0 35px rgba(0,229,255,0.5), 0 0 60px rgba(124,77,255,0.2); }
+}
+
+.logo span { color: var(--cyan); }
+
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.nav-tab {
+  padding: 8px 18px;
+  border-radius: 7px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+}
+
+.nav-tab.active {
+  background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(124,77,255,0.15));
+  color: var(--cyan);
+  border: 1px solid rgba(0,229,255,0.2);
+}
+
+.nav-tab:hover:not(.active) { color: var(--text); background: var(--surface2); }
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(0,230,118,0.3);
+  background: rgba(0,230,118,0.08);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--emerald);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--emerald);
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   HERO / STATS ROW
+═══════════════════════════════════════════════════════ */
+.hero {
+  padding: 48px 0 32px;
+  text-align: center;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--cyan);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  padding: 6px 14px;
+  border: 1px solid rgba(0,229,255,0.2);
+  border-radius: 20px;
+  background: rgba(0,229,255,0.05);
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 5vw, 56px);
+  font-weight: 800;
+  letter-spacing: -2px;
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+
+.hero h1 .grad {
+  background: linear-gradient(90deg, var(--cyan), var(--violet), var(--cyan));
+  background-size: 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 0%; }
+  100% { background-position: 200%; }
+}
+
+.hero p {
+  color: var(--text2);
+  font-size: 16px;
+  max-width: 520px;
+  margin: 0 auto 40px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   STAT CARDS
+═══════════════════════════════════════════════════════ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+
+.stat-card:hover { transform: translateY(-2px); border-color: var(--border2); }
+
+.stat-card.c1 { --accent: linear-gradient(90deg, var(--cyan), var(--sky)); }
+.stat-card.c2 { --accent: linear-gradient(90deg, var(--emerald), var(--cyan)); }
+.stat-card.c3 { --accent: linear-gradient(90deg, var(--rose), var(--violet)); }
+.stat-card.c4 { --accent: linear-gradient(90deg, var(--amber), var(--rose)); }
+.stat-card.c5 { --accent: linear-gradient(90deg, var(--violet), var(--sky)); }
+.stat-card.c6 { --accent: linear-gradient(90deg, var(--text3), var(--text2)); }
+
+.stat-number {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+
+/* ═══════════════════════════════════════════════════════
+   PAGES
+═══════════════════════════════════════════════════════ */
+.page { display: none; animation: fadeIn 0.3s ease; }
+.page.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   TWO-COL LAYOUT
+═══════════════════════════════════════════════════════ */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 24px;
+  padding-bottom: 60px;
+}
+
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ═══════════════════════════════════════════════════════
+   CARD
+═══════════════════════════════════════════════════════ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r3);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.card-body { padding: 24px; }
+
+/* ═══════════════════════════════════════════════════════
+   SERVICE TYPE PICKER
+═══════════════════════════════════════════════════════ */
+.service-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.service-card {
+  border: 1.5px solid var(--border);
+  border-radius: var(--r2);
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg3);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.service-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--s-color);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.service-card:hover::after,
+.service-card.selected::after { opacity: 0.08; }
+
+.service-card.selected {
+  border-color: var(--s-border);
+  box-shadow: 0 0 0 1px var(--s-border), 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.service-card.medical    { --s-color: #00e5ff; --s-border: rgba(0,229,255,0.5); }
+.service-card.restaurant { --s-color: #ffab00; --s-border: rgba(255,171,0,0.5); }
+.service-card.business   { --s-color: #7c4dff; --s-border: rgba(124,77,255,0.5); }
+.service-card.all        { --s-color: #00e676; --s-border: rgba(0,230,118,0.5); }
+
+.service-icon { font-size: 28px; margin-bottom: 8px; display: block; }
+.service-name { font-family: var(--font-display); font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.service-desc { font-size: 10px; color: var(--text3); }
+
+/* ═══════════════════════════════════════════════════════
+   LANGUAGE PILLS
+═══════════════════════════════════════════════════════ */
+.lang-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.lang-pill {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text2);
+  transition: all 0.2s;
+}
+
+.lang-pill:hover { border-color: var(--border2); color: var(--text); }
+
+.lang-pill.selected {
+  border-color: rgba(0,229,255,0.5);
+  background: rgba(0,229,255,0.1);
+  color: var(--cyan);
+  box-shadow: 0 0 12px rgba(0,229,255,0.1);
+}
+
+/* ═══════════════════════════════════════════════════════
+   FORM ELEMENTS
+═══════════════════════════════════════════════════════ */
+.form-group { margin-bottom: 16px; }
+
+label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+
+input, textarea, select {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 11px 14px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(0,229,255,0.4);
+  box-shadow: 0 0 0 3px rgba(0,229,255,0.08);
+}
+
+textarea { resize: vertical; min-height: 90px; }
+select option { background: var(--bg2); }
+
+/* ═══════════════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: var(--r);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  outline: none;
+  letter-spacing: 0.3px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  color: #000;
+  box-shadow: 0 4px 20px rgba(0,229,255,0.25);
+}
+
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(0,229,255,0.35); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+
+.btn-ghost:hover { border-color: var(--border2); color: var(--text); background: var(--surface2); }
+
+.btn-full { width: 100%; justify-content: center; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+/* ═══════════════════════════════════════════════════════
+   STATUS BADGES
+═══════════════════════════════════════════════════════ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.badge-confirmed   { background: rgba(0,230,118,0.12);  color: var(--emerald); border: 1px solid rgba(0,230,118,0.25); }
+.badge-cancelled   { background: rgba(255,64,129,0.12); color: var(--rose);    border: 1px solid rgba(255,64,129,0.25); }
+.badge-pending     { background: rgba(255,171,0,0.12);  color: var(--amber);   border: 1px solid rgba(255,171,0,0.25); }
+.badge-rescheduled { background: rgba(124,77,255,0.12); color: #b39ddb;        border: 1px solid rgba(124,77,255,0.25); }
+.badge-failed      { background: rgba(255,64,129,0.12); color: var(--rose);    border: 1px solid rgba(255,64,129,0.25); }
+.badge-no_response { background: rgba(74,96,128,0.2);   color: var(--text3);   border: 1px solid rgba(74,96,128,0.3); }
+.badge-unclear     { background: rgba(64,196,255,0.1);  color: var(--sky);     border: 1px solid rgba(64,196,255,0.2); }
+
+/* ═══════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════ */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: var(--r2);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  backdrop-filter: blur(16px);
+  min-width: 280px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+  font-size: 13px;
+}
+
+.toast.success { border-color: rgba(0,230,118,0.3); }
+.toast.error   { border-color: rgba(255,64,129,0.3); }
+.toast.info    { border-color: rgba(0,229,255,0.3);  }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; pointer-events: none; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   CALLING OVERLAY
+═══════════════════════════════════════════════════════ */
+.calling-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(8,12,20,0.92);
+  backdrop-filter: blur(20px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.calling-overlay.active { display: flex; }
+
+.pulse-ring {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  position: relative;
+}
+
+.pulse-ring::before,
+.pulse-ring::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid var(--cyan);
+  animation: ring-expand 2s ease-out infinite;
+}
+
+.pulse-ring::after { animation-delay: 1s; }
+
+@keyframes ring-expand {
+  0%   { width: 120px; height: 120px; opacity: 0.8; }
+  100% { width: 240px; height: 240px; opacity: 0; }
+}
+
+.calling-text { font-family: var(--font-display); font-size: 22px; font-weight: 700; text-align: center; }
+.calling-sub  { font-family: var(--font-mono); font-size: 12px; color: var(--text3); text-align: center; }
+
+/* ═══════════════════════════════════════════════════════
+   WAVEFORM
+═══════════════════════════════════════════════════════ */
+.waveform { display: flex; align-items: center; gap: 3px; height: 24px; }
+.wave-bar {
+  width: 3px;
+  background: var(--cyan);
+  border-radius: 2px;
+  animation: wave 1.2s ease-in-out infinite;
+}
+.wave-bar:nth-child(1) { animation-delay: 0s;   height: 6px; }
+.wave-bar:nth-child(2) { animation-delay: 0.1s; height: 14px; }
+.wave-bar:nth-child(3) { animation-delay: 0.2s; height: 20px; }
+.wave-bar:nth-child(4) { animation-delay: 0.3s; height: 14px; }
+.wave-bar:nth-child(5) { animation-delay: 0.4s; height: 8px; }
+.wave-bar:nth-child(6) { animation-delay: 0.5s; height: 16px; }
+.wave-bar:nth-child(7) { animation-delay: 0.6s; height: 10px; }
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.4); opacity: 0.4; }
+  50%       { transform: scaleY(1);   opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   EMPTY STATE
+═══════════════════════════════════════════════════════ */
+.empty-state { text-align: center; padding: 60px 24px; color: var(--text3); }
+.empty-state .emoji { font-size: 48px; margin-bottom: 12px; display: block; }
+.empty-state h3 { font-family: var(--font-display); font-size: 18px; color: var(--text2); margin-bottom: 6px; }
+
+/* ═══════════════════════════════════════════════════════
+   SAMPLE CHIPS
+═══════════════════════════════════════════════════════ */
+.sample-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+
+.sample-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text2);
+  transition: all 0.2s;
+}
+
+.sample-chip:hover {
+  border-color: rgba(0,229,255,0.3);
+  color: var(--cyan);
+  background: rgba(0,229,255,0.06);
+}
+
+/* ═══════════════════════════════════════════════════════
+   FILTER BAR
+═══════════════════════════════════════════════════════ */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.filter-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn.active,
+.filter-btn:hover {
+  border-color: rgba(0,229,255,0.4);
+  color: var(--cyan);
+  background: rgba(0,229,255,0.08);
+}
+
+.search-input {
+  flex: 1;
+  max-width: 280px;
+  padding: 7px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+
+.search-input:focus { border-color: rgba(0,229,255,0.3); }
+
+/* ═══════════════════════════════════════════════════════
+   VIEW TOGGLE
+═══════════════════════════════════════════════════════ */
+.view-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.view-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.view-btn.active {
+  background: var(--surface2);
+  color: var(--cyan);
+}
+
+/* ═══════════════════════════════════════════════════════
+   CUSTOMER RESPONSE CARDS
+═══════════════════════════════════════════════════════ */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.response-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+  animation: cardPop 0.35s ease both;
+}
+
+@keyframes cardPop {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+.response-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border2);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+}
+
+.response-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--card-accent);
+}
+
+.response-card[data-status="confirmed"]   { --card-accent: linear-gradient(90deg, #00e676, #00b8cc); }
+.response-card[data-status="cancelled"]   { --card-accent: linear-gradient(90deg, #ff4081, #7c4dff); }
+.response-card[data-status="pending"]     { --card-accent: linear-gradient(90deg, #ffab00, #ff6d00); }
+.response-card[data-status="rescheduled"] { --card-accent: linear-gradient(90deg, #7c4dff, #40c4ff); }
+.response-card[data-status="no_response"] { --card-accent: linear-gradient(90deg, #4a6080, #1e2d45); }
+.response-card[data-status="failed"]      { --card-accent: linear-gradient(90deg, #ff4081, #880e4f); }
+.response-card[data-status="unclear"]     { --card-accent: linear-gradient(90deg, #40c4ff, #00b8cc); }
+
+.rc-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 20px 0;
+  gap: 12px;
+}
+
+.rc-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.rc-avatar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--card-accent);
+  opacity: 0.15;
+}
+
+.rc-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.rc-status-dot.confirmed   { background: #00e676; box-shadow: 0 0 8px #00e676; }
+.rc-status-dot.cancelled   { background: #ff4081; box-shadow: 0 0 8px #ff4081; }
+.rc-status-dot.pending     { background: #ffab00; box-shadow: 0 0 8px #ffab00; animation: blink 1.5s infinite; }
+.rc-status-dot.rescheduled { background: #b39ddb; box-shadow: 0 0 8px #b39ddb; }
+.rc-status-dot.no_response { background: #4a6080; }
+.rc-status-dot.failed      { background: #ff4081; }
+.rc-status-dot.unclear     { background: #40c4ff; box-shadow: 0 0 8px #40c4ff; }
+
+.rc-info { flex: 1; min-width: 0; }
+
+.rc-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rc-phone {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+}
+
+.rc-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 20px;
+}
+
+.rc-section {
+  padding: 0 20px;
+  margin-bottom: 14px;
+}
+
+.rc-section-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 5px;
+}
+
+.rc-order-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--cyan);
+  background: rgba(0,229,255,0.07);
+  border: 1px solid rgba(0,229,255,0.15);
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.rc-order-details {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rc-response-wrap {
+  padding: 0 20px;
+  margin-bottom: 16px;
+}
+
+.rc-response-bubble {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--text2);
+  font-style: italic;
+  position: relative;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rc-response-bubble::before {
+  content: '"';
+  font-size: 28px;
+  line-height: 1;
+  color: var(--text3);
+  font-family: Georgia, serif;
+  flex-shrink: 0;
+  margin-top: -4px;
+}
+
+.rc-response-bubble.no-speech {
+  font-style: normal;
+  color: var(--text3);
+}
+
+.rc-response-bubble.no-speech::before { display: none; }
+
+.rc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--bg3);
+  border-top: 1px solid var(--border);
+  gap: 8px;
+}
+
+.rc-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rc-lang-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text3);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.rc-svc-tag { font-size: 12px; }
+
+.rc-time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text3);
+  white-space: nowrap;
+}
+
+.intent-icon {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════════════════
+   TABLE
+═══════════════════════════════════════════════════════ */
+.table-wrap {
+  overflow-x: auto;
+  border-radius: var(--r2);
+  border: 1px solid var(--border);
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+thead th {
+  background: var(--bg2);
+  padding: 12px 16px;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text3);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface2); }
+
+tbody td {
+  padding: 14px 16px;
+  color: var(--text2);
+  vertical-align: middle;
+}
+
+tbody td:first-child { color: var(--text); font-family: var(--font-mono); font-size: 12px; }
+
+/* ═══════════════════════════════════════════════════════
+   DETAIL MODAL
+═══════════════════════════════════════════════════════ */
+.modal-bg {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(8,12,20,0.88);
+  backdrop-filter: blur(16px);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-bg.active { display: flex; animation: fadeIn 0.2s ease; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+  animation: modalSlide 0.25s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes modalSlide {
+  from { transform: scale(0.95) translateY(20px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.modal-close:hover { background: var(--rose); color: #fff; border-color: var(--rose); }
+
+.modal-body { padding: 24px; overflow-y: auto; }
+
+.modal-field { margin-bottom: 18px; }
+
+.modal-field-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+
+.modal-field-value {
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.modal-field-value.mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.modal-response-big {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 15px;
+  color: var(--text);
+  font-style: italic;
+  position: relative;
+  margin-bottom: 18px;
+}
+
+.modal-response-big::before {
+  content: '"';
+  font-size: 48px;
+  line-height: 1;
+  color: var(--text3);
+  font-family: Georgia, serif;
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  opacity: 0.4;
+}
+
+.modal-response-big .inner { padding-left: 28px; }
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LOGS PAGE
+═══════════════════════════════════════════════════════ */
+.log-entry {
+  display: flex;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.log-entry:last-child { border-bottom: none; }
+.log-time { font-family: var(--font-mono); color: var(--text3); white-space: nowrap; font-size: 11px; padding-top: 2px; }
+.log-icon { font-size: 16px; }
+.log-msg { color: var(--text2); }
+.log-msg strong { color: var(--text); }
+
+/* ═══════════════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════════════ */
+footer {
+  border-top: 1px solid var(--border);
+  background: rgba(8,12,20,0.6);
+  backdrop-filter: blur(10px);
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 32px 24px 24px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.footer-logo-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  background: #ffffff;
+  border-radius: 14px;
+  transition: opacity 0.25s, transform 0.25s, box-shadow 0.25s;
+  opacity: 0.95;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+}
+
+.footer-logo-item:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(0,0,0,0.28);
+}
+
+.footer-logo-item svg {
+  display: block;
+  transition: filter 0.25s, transform 0.25s;
+}
+
+.footer-logo-item:hover svg {
+  filter: brightness(1.05);
+}
+
+.footer-logo-divider {
+  width: 1px;
+  height: 44px;
+  background: var(--border2);
+  flex-shrink: 0;
+}
+
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 24px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text3);
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.footer-bottom .sep { color: var(--border2); }
+
+@media (max-width: 600px) {
+  .footer-logos        { padding: 24px 16px 20px; }
+  .footer-logo-item    { padding: 0 20px; }
+  .footer-logo-item img { height: 38px; max-width: 130px; }
+  .footer-logo-divider { height: 32px; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   SCHEDULED JOBS TABLE
+═══════════════════════════════════════════════════════ */
+.jobs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.jobs-table th {
+  background: var(--bg2);
+  padding: 10px 14px;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text3);
+  border-bottom: 1px solid var(--border);
+}
+.jobs-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+}
+.jobs-table tr:last-child td { border-bottom: none; }
+
+/* ═══════════════════════════════════════════════════════
+   API STATUS BADGE
+═══════════════════════════════════════════════════════ */
+.api-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  margin-left: 10px;
+  border: 1px solid var(--border);
+}
+.api-status.online  { color: var(--emerald); border-color: rgba(0,230,118,0.3); background: rgba(0,230,118,0.08); }
+.api-status.offline { color: var(--rose);   border-color: rgba(255,64,129,0.3); background: rgba(255,64,129,0.08); }
+</style>
+</head>
+<body>
+
+<!-- Backgrounds -->
+<div class="grid-bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- CALLING OVERLAY -->
+<div class="calling-overlay" id="callingOverlay">
+  <div class="pulse-ring">📞</div>
+  <div class="calling-text" id="callingName">Calling Customer…</div>
+  <div class="calling-sub" id="callingSub">Initiating voice connection via Twilio</div>
+  <div class="waveform" style="margin-top:10px">
+    <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+  </div>
+  <button class="btn btn-ghost" style="margin-top:20px" onclick="hideCallingOverlay()">Dismiss</button>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-bg" id="detailModal" onclick="closeModalOnBg(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Order Details</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container"></div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- NAV -->
+  <header>
+    <div class="container">
+      <nav class="nav">
+        <a class="logo" href="#">
+          <div class="logo-icon">🤖</div>
+          Voice<span>Bot</span> AI
+        </a>
+        <div class="nav-tabs">
+          <button class="nav-tab active" onclick="showPage('dispatch', this)">📞 Dispatch</button>
+          <button class="nav-tab" onclick="showPage('orders', this)">📋 Orders</button>
+          <button class="nav-tab" onclick="showPage('scheduled', this)">⏰ Scheduled</button>
+          <button class="nav-tab" onclick="showPage('logs', this)">🗂 Logs</button>
+        </div>
+        <div style="display:flex;align-items:center">
+          <div class="status-pill">
+            <div class="status-dot"></div>
+            System Live
+          </div>
+          <div class="api-status offline" id="apiStatus">● API</div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO + STATS -->
+  <div class="container">
+    <div class="hero">
+      <div class="hero-eyebrow">⚡ Powered by Twilio · Whisper · FastAPI</div>
+      <h1>Multilingual <span class="grad">AI Voice Bot</span><br>for Order Confirmation</h1>
+      <p>Automates outbound calls · Understands 5 languages · Logs everything in real time</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card c1"><div class="stat-number" id="stat-total">—</div><div class="stat-label">Total Calls</div></div>
+      <div class="stat-card c2"><div class="stat-number" id="stat-confirmed" style="color:var(--emerald)">—</div><div class="stat-label">Confirmed</div></div>
+      <div class="stat-card c3"><div class="stat-number" id="stat-cancelled" style="color:var(--rose)">—</div><div class="stat-label">Cancelled</div></div>
+      <div class="stat-card c4"><div class="stat-number" id="stat-pending" style="color:var(--amber)">—</div><div class="stat-label">Pending</div></div>
+      <div class="stat-card c5"><div class="stat-number" id="stat-rescheduled" style="color:#b39ddb">—</div><div class="stat-label">Rescheduled</div></div>
+      <div class="stat-card c6"><div class="stat-number" id="stat-no_response" style="color:var(--text3)">—</div><div class="stat-label">No Response</div></div>
+    </div>
+  </div>
+
+  <!-- PAGE: DISPATCH -->
+  <div id="page-dispatch" class="page active">
+    <div class="container">
+      <div class="two-col">
+
+        <!-- LEFT: Call Form -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📞 Initiate Call</span>
+            <div class="waveform" style="opacity:0.3">
+              <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+              <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+            </div>
+          </div>
+          <div class="card-body">
+            <label>Service Type</label>
+            <div class="service-grid">
+              <div class="service-card medical selected" onclick="selectService('medical', this)">
+                <span class="service-icon">🏥</span>
+                <div class="service-name">Medical</div>
+                <div class="service-desc">Clinic & pharmacy orders</div>
+              </div>
+              <div class="service-card restaurant" onclick="selectService('restaurant', this)">
+                <span class="service-icon">🍽️</span>
+                <div class="service-name">Restaurant</div>
+                <div class="service-desc">Food order confirmation</div>
+              </div>
+              <div class="service-card business" onclick="selectService('business', this)">
+                <span class="service-icon">💼</span>
+                <div class="service-name">Business</div>
+                <div class="service-desc">B2B office orders</div>
+              </div>
+              <div class="service-card all" onclick="selectService('all', this)">
+                <span class="service-icon">🌐</span>
+                <div class="service-name">All Services</div>
+                <div class="service-desc">Auto-detect & route</div>
+              </div>
+            </div>
+
+            <label>Preferred Language</label>
+            <div class="lang-row">
+              <div class="lang-pill selected" data-lang="en" onclick="selectLang(this)">🇬🇧 English</div>
+              <div class="lang-pill" data-lang="hi" onclick="selectLang(this)">🇮🇳 हिंदी</div>
+              <div class="lang-pill" data-lang="kn" onclick="selectLang(this)">🏔 ಕನ್ನಡ</div>
+              <div class="lang-pill" data-lang="mr" onclick="selectLang(this)">🌸 मराठी</div>
+              <div class="lang-pill" data-lang="te" onclick="selectLang(this)">🌊 తెలుగు</div>
+            </div>
+
+            <div class="form-group">
+              <label>Customer Name</label>
+              <input type="text" id="customerName" placeholder="e.g. Rahul Sharma" />
+            </div>
+            <div class="form-group">
+              <label>Phone Number (with country code)</label>
+              <input type="text" id="customerPhone" placeholder="+91 98765 43210" />
+            </div>
+            <div class="form-group">
+              <label>Order ID</label>
+              <input type="text" id="orderId" placeholder="e.g. ORD-2024-001" />
+            </div>
+            <div class="form-group">
+              <label>Order Details (spoken to customer)</label>
+              <textarea id="orderDetails" placeholder="e.g. 2 Paneer Butter Masala, 1 Naan, delivery to MG Road at 7:30 PM. Total ₹480."></textarea>
+            </div>
+
+            <button class="btn btn-primary btn-full" onclick="initiateCall()" id="callBtn">
+              📞 Initiate Voice Call
+            </button>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div style="display:flex; flex-direction:column; gap:20px">
+
+          <div class="card">
+            <div class="card-header"><span class="card-title">⚡ Quick Fill Samples</span></div>
+            <div class="card-body">
+              <div class="sample-row">
+                <div class="sample-chip" onclick="fillSample('medical')">🏥 Medical</div>
+                <div class="sample-chip" onclick="fillSample('restaurant')">🍽️ Restaurant</div>
+                <div class="sample-chip" onclick="fillSample('business')">💼 Business</div>
+                <div class="sample-chip" onclick="fillSample('all')">🌐 All Services</div>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label>Sample Order Preview</label>
+                <textarea id="samplePreview" style="height:100px; font-family:var(--font-mono); font-size:12px; color:var(--cyan)" readonly>Select a sample above to preview the order…</textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><span class="card-title">🔄 How It Works</span></div>
+            <div class="card-body">
+              <div style="display:flex; flex-direction:column; gap:14px">
+                <div style="display:flex; gap:14px; align-items:flex-start">
+                  <div style="width:28px;height:28px;border-radius:50%;background:rgba(0,229,255,0.15);border:1px solid rgba(0,229,255,0.3);color:var(--cyan);font-family:var(--font-mono);font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0">01</div>
+                  <div><strong style="font-size:13px">Trigger Call</strong><br><span style="color:var(--text3);font-size:12px">Submit the form → FastAPI calls Twilio API to dial the customer</span></div>
+                </div>
+                <div style="display:flex; gap:14px; align-items:flex-start">
+                  <div style="width:28px;height:28px;border-radius:50%;background:rgba(124,77,255,0.15);border:1px solid rgba(124,77,255,0.3);color:#b39ddb;font-family:var(--font-mono);font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0">02</div>
+                  <div><strong style="font-size:13px">Bot Speaks</strong><br><span style="color:var(--text3);font-size:12px">Twilio TwiML reads order details aloud in the chosen language</span></div>
+                </div>
+                <div style="display:flex; gap:14px; align-items:flex-start">
+                  <div style="width:28px;height:28px;border-radius:50%;background:rgba(0,230,118,0.15);border:1px solid rgba(0,230,118,0.3);color:var(--emerald);font-family:var(--font-mono);font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0">03</div>
+                  <div><strong style="font-size:13px">Customer Responds</strong><br><span style="color:var(--text3);font-size:12px">Twilio Gather captures voice → sends SpeechResult to webhook</span></div>
+                </div>
+                <div style="display:flex; gap:14px; align-items:flex-start">
+                  <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,171,0,0.15);border:1px solid rgba(255,171,0,0.3);color:var(--amber);font-family:var(--font-mono);font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0">04</div>
+                  <div><strong style="font-size:13px">Intent Detection</strong><br><span style="color:var(--text3);font-size:12px">NLP maps speech → confirm / cancel / reschedule</span></div>
+                </div>
+                <div style="display:flex; gap:14px; align-items:flex-start">
+                  <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,64,129,0.15);border:1px solid rgba(255,64,129,0.3);color:var(--rose);font-family:var(--font-mono);font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0">05</div>
+                  <div><strong style="font-size:13px">Log & Respond</strong><br><span style="color:var(--text3);font-size:12px">Status saved to SQLite · Customer hears confirmation message</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><span class="card-title">🌍 Language Support</span></div>
+            <div class="card-body">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center"><div style="font-size:20px">🇬🇧</div><div style="font-size:12px;font-weight:600">English</div><div style="font-size:10px;color:var(--text3)">en-IN</div></div>
+                <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center"><div style="font-size:20px">🇮🇳</div><div style="font-size:12px;font-weight:600">हिंदी</div><div style="font-size:10px;color:var(--text3)">hi-IN</div></div>
+                <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center"><div style="font-size:20px">🏔</div><div style="font-size:12px;font-weight:600">ಕನ್ನಡ</div><div style="font-size:10px;color:var(--text3)">kn-IN</div></div>
+                <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center"><div style="font-size:20px">🌸</div><div style="font-size:12px;font-weight:600">मराठी</div><div style="font-size:10px;color:var(--text3)">mr-IN</div></div>
+                <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;grid-column:span 2"><div style="font-size:20px">🌊</div><div style="font-size:12px;font-weight:600">తెలుగు</div><div style="font-size:10px;color:var(--text3)">te-IN</div></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: ORDERS -->
+  <div id="page-orders" class="page">
+    <div class="container" style="padding-bottom:60px">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+        <div>
+          <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-0.5px">Customer Responses</h2>
+          <p style="color:var(--text3);font-size:13px;margin-top:4px">Every call — name, phone, order, and what the customer said</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="view-toggle">
+            <button class="view-btn active" id="btnCardView" onclick="setView('cards')" title="Card View">⊞</button>
+            <button class="view-btn" id="btnTableView" onclick="setView('table')" title="Table View">☰</button>
+          </div>
+          <button class="btn btn-ghost" onclick="loadOrders()">🔄 Refresh</button>
+          <button class="btn btn-ghost" onclick="exportCSV()">📥 CSV</button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterOrders('all', this)">All</button>
+        <button class="filter-btn" onclick="filterOrders('pending', this)">⏳ Pending</button>
+        <button class="filter-btn" onclick="filterOrders('confirmed', this)">✅ Confirmed</button>
+        <button class="filter-btn" onclick="filterOrders('cancelled', this)">❌ Cancelled</button>
+        <button class="filter-btn" onclick="filterOrders('rescheduled', this)">🔄 Rescheduled</button>
+        <button class="filter-btn" onclick="filterOrders('no_response', this)">🔇 No Response</button>
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍  Search name, order ID…" oninput="searchOrders(this.value)">
+      </div>
+
+      <div id="cardView">
+        <div class="cards-grid" id="cardsGrid">
+          <div style="grid-column:1/-1">
+            <div class="empty-state"><span class="emoji">📭</span><h3>No calls yet</h3><p>Trigger a call from the Dispatch tab</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tableView" style="display:none">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID</th><th>Customer</th><th>Phone</th><th>Service</th>
+                <th>Language</th><th>Status</th><th>Customer Said</th><th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="ordersBody">
+              <tr><td colspan="8"><div class="empty-state"><span class="emoji">📭</span><h3>No calls yet</h3></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PAGE: SCHEDULED -->
+  <div id="page-scheduled" class="page">
+    <div class="container" style="padding-bottom:60px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+        <div>
+          <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-0.5px">Scheduled Callbacks</h2>
+          <p style="color:var(--text3);font-size:13px;margin-top:4px">Upcoming automated retry calls</p>
+        </div>
+        <button class="btn btn-ghost" onclick="loadScheduled()">🔄 Refresh</button>
+      </div>
+      <div class="card">
+        <div class="card-body" style="padding:0">
+          <div id="scheduledContainer">
+            <div class="empty-state" style="padding:40px"><span class="emoji">📅</span><h3>No scheduled callbacks</h3></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: LOGS -->
+  <div id="page-logs" class="page">
+    <div class="container" style="padding-bottom:60px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+        <div>
+          <h2 style="font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-0.5px">System Logs</h2>
+          <p style="color:var(--text3);font-size:13px;margin-top:4px">Live activity feed from the VoiceBot backend</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" onclick="loadHealth()">🔍 Check API</button>
+          <button class="btn btn-ghost" onclick="clearLogs()">🗑 Clear</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body" style="padding:0 24px">
+          <div id="logFeed">
+            <div class="log-entry">
+              <div class="log-time">--:--:--</div>
+              <div class="log-icon">🚀</div>
+              <div class="log-msg"><strong>VoiceBot AI</strong> dashboard loaded. Connect to backend to see live logs.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<!-- ══════════════════════════════════════════════════
+     FOOTER WITH LOGOS
+══════════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-logos">
+    <div class="footer-logo-item">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 90" width="200" height="82" role="img" aria-label="ADVIT AI Labs">
+        <text x="110" y="50" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="700" fill="#1a2560" text-anchor="middle" letter-spacing="0.5">ADVIT™ AI Labs</text>
+      </svg>
+    </div>
+    <div class="footer-logo-divider"></div>
+    <div class="footer-logo-item">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 100" width="230" height="90" role="img" aria-label="AutomatonAI">
+        <text x="130" y="55" font-family="'Segoe UI', Arial, sans-serif" font-size="20" font-weight="800" fill="#3d4fc0" text-anchor="middle" letter-spacing="-0.2">AutomatonAI</text>
+      </svg>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>VoiceBot AI</span>
+    <span class="sep">·</span>
+    <span>Built with FastAPI + Twilio + Whisper</span>
+    <span class="sep">·</span>
+    <span>Made for Hackathon 2024</span>
+  </div>
+</footer>
+
+<!-- JAVASCRIPT -->
+<script>
+// Auto-detect API base URL (works with localhost, ngrok, or deployed domain)
+const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:8000'
+  : (window.location.origin.includes('ngrok') ? window.location.origin : '');
+
+let allOrders = [];
+let selectedService = 'medical';
+let selectedLang = 'en';
+let currentFilter = 'all';
+let currentView = 'cards';
+
+const SAMPLES = {
+  medical: {
+    name: 'Priya Ramesh', phone: '+919876543210', id: 'MED-2024-001',
+    details: 'Order: 2 strips Azithromycin 500mg, 1 bottle Cetrizine syrup. Pickup at Apollo Pharmacy, MG Road branch. Total ₹340.',
+    service: 'medical', lang: 'en'
+  },
+  restaurant: {
+    name: 'Vikram Nair', phone: '+918765432109', id: 'RST-2024-007',
+    details: 'Order: 2 Paneer Butter Masala, 1 Garlic Naan, 1 Mango Lassi. Delivery to 12B Indira Nagar, Bangalore. Estimated 45 min. Total ₹680.',
+    service: 'restaurant', lang: 'hi'
+  },
+  business: {
+    name: 'Ananya Desai', phone: '+917654321098', id: 'BIZ-2024-031',
+    details: 'B2B order: 50 reams A4 paper (JK Copier), 10 printer cartridges HP 805. Delivery to TCS Whitefield campus, Gate 3. Total ₹12,500.',
+    service: 'business', lang: 'kn'
+  },
+  all: {
+    name: 'Sanjay Patel', phone: '+916543210987', id: 'ALL-2024-015',
+    details: 'Mixed order: Clinic appointment Dec 20 at 10 AM with Dr. Gupta + restaurant dinner reservation for 4 at Barbeque Nation at 8 PM.',
+    service: 'all', lang: 'mr'
+  }
+};
+
+const svcIcon   = { medical:'🏥', restaurant:'🍽️', business:'💼', all:'🌐' };
+const langLabel = { en:'🇬🇧 EN', hi:'🇮🇳 HI', kn:'🏔 KN', mr:'🌸 MR', te:'🌊 TE' };
+const intentIcon = { confirm:'✅', cancel:'❌', reschedule:'🔄', unclear:'❓' };
+const statusLabel = {
+  confirmed:'✅ confirmed', cancelled:'❌ cancelled', pending:'⏳ pending',
+  rescheduled:'🔄 rescheduled', failed:'💥 failed', no_response:'🔇 no response', unclear:'❓ unclear'
+};
+
+function badge(status) {
+  return `<span class="badge badge-${status}">${statusLabel[status] || status}</span>`;
+}
+
+function fmtTime(ts) {
+  if (!ts) return '—';
+  try {
+    return new Date(ts + 'Z').toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata', hour12: true,
+      month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'
+    });
+  } catch { return ts.slice(0,16); }
+}
+
+function initials(name) {
+  if (!name) return '?';
+  return name.trim().split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+}
+
+function showPage(name, tabEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+  if (name === 'orders') loadOrders();
+  if (name === 'scheduled') loadScheduled();
+  if (name === 'logs') loadStats();
+}
+
+function setView(v) {
+  currentView = v;
+  document.getElementById('cardView').style.display  = v === 'cards' ? '' : 'none';
+  document.getElementById('tableView').style.display = v === 'table' ? '' : 'none';
+  document.getElementById('btnCardView').classList.toggle('active', v === 'cards');
+  document.getElementById('btnTableView').classList.toggle('active', v === 'table');
+}
+
+function selectService(type, el) {
+  document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedService = type;
+}
+
+function selectLang(el) {
+  document.querySelectorAll('.lang-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedLang = el.dataset.lang;
+}
+
+function fillSample(type) {
+  const s = SAMPLES[type];
+  document.getElementById('customerName').value  = s.name;
+  document.getElementById('customerPhone').value = s.phone;
+  document.getElementById('orderId').value       = s.id;
+  document.getElementById('orderDetails').value  = s.details;
+  document.getElementById('samplePreview').value = `Customer: ${s.name}\nPhone: ${s.phone}\nOrder: ${s.details}`;
+  document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`.service-card.${s.service}`)?.classList.add('selected');
+  selectedService = s.service;
+  document.querySelectorAll('.lang-pill').forEach(p => p.classList.remove('selected'));
+  document.querySelector(`[data-lang="${s.lang}"]`)?.classList.add('selected');
+  selectedLang = s.lang;
+  toast('✅ Sample filled! Review and click Initiate Call.', 'success');
+  addLog('📝', `Sample prefilled: <strong>${s.name}</strong> — ${s.service}`);
+}
+
+async function initiateCall() {
+  const name    = document.getElementById('customerName').value.trim();
+  const phone   = document.getElementById('customerPhone').value.trim();
+  const orderId = document.getElementById('orderId').value.trim();
+  const details = document.getElementById('orderDetails').value.trim();
+
+  if (!name || !phone || !orderId || !details) {
+    toast('⚠️ Please fill in all fields.', 'error'); return;
+  }
+
+  const btn = document.getElementById('callBtn');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Dialing…';
+  showCallingOverlay(name, phone);
+  addLog('📞', `Initiating call to <strong>${name}</strong> (${phone}) — Order: ${orderId}`);
+
+  const fd = new FormData();
+  fd.append('customer_name',  name);
+  fd.append('customer_phone', phone);
+  fd.append('order_id',       orderId);
+  fd.append('order_details',  details);
+  fd.append('service_type',   selectedService);
+  fd.append('language',       selectedLang);
+
+  try {
+    const resp = await fetch(`${API}/call`, { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (data.success) {
+      toast(`🎉 Call initiated for ${name}!`, 'success');
+      addLog('✅', `Call queued for <strong>${name}</strong> (Order: ${orderId})`);
+      loadStats();
+    } else {
+      toast('❌ Call failed: ' + (data.detail || 'Unknown error'), 'error');
+      addLog('❌', `Call failed: ${data.detail}`);
+      hideCallingOverlay();
+    }
+  } catch (e) {
+    toast('❌ Cannot connect to backend. Is the server running?', 'error');
+    addLog('⚠️', `Backend unreachable: ${e.message}`);
+    hideCallingOverlay();
+  }
+
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.innerHTML = '📞 Initiate Voice Call';
+    hideCallingOverlay();
+  }, 4000);
+}
+
+function showCallingOverlay(name, phone) {
+  document.getElementById('callingName').textContent = `Calling ${name}`;
+  document.getElementById('callingSub').textContent  = `${phone} · Connecting via Twilio…`;
+  document.getElementById('callingOverlay').classList.add('active');
+}
+function hideCallingOverlay() {
+  document.getElementById('callingOverlay').classList.remove('active');
+}
+
+async function loadOrders() {
+  try {
+    const resp = await fetch(`${API}/orders`);
+    allOrders = await resp.json();
+    renderAll(allOrders);
+    addLog('🔄', `Orders refreshed — ${allOrders.length} records`);
+  } catch (e) {
+    addLog('⚠️', `Could not load orders: ${e.message}`);
+  }
+}
+
+function renderAll(orders) {
+  renderCards(orders);
+  renderTable(orders);
+}
+
+function renderCards(orders) {
+  const grid = document.getElementById('cardsGrid');
+  if (!orders.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><span class="emoji">📭</span><h3>No calls yet</h3><p>Trigger a call from the Dispatch tab</p></div></div>`;
+    return;
+  }
+
+  grid.innerHTML = orders.map((o, i) => {
+    const st = o.status || 'pending';
+    const initStr = initials(o.customer_name);
+    const hasResponse = o.speech_result && o.speech_result.trim();
+    const intIcon = intentIcon[o.intent] || '📞';
+
+    return `
+    <div class="response-card" data-status="${st}" style="animation-delay:${i * 0.04}s"
+         onclick="openModal('${o.order_id}')">
+      <div class="rc-top">
+        <div class="rc-avatar"
+             style="background:linear-gradient(135deg,${avatarColor(o.customer_name,0)},${avatarColor(o.customer_name,1)});color:#fff">
+          ${initStr}
+        </div>
+        <div class="rc-info">
+          <div class="rc-name">${escHtml(o.customer_name)}</div>
+          <div class="rc-phone">${escHtml(o.customer_phone)}</div>
+        </div>
+        <div class="rc-status-dot ${st}"></div>
+      </div>
+      <div class="rc-divider"></div>
+      <div class="rc-section">
+        <div class="rc-section-label">Order ID</div>
+        <div class="rc-order-id"><span style="opacity:0.5">#</span>${escHtml(o.order_id)}</div>
+      </div>
+      <div class="rc-section">
+        <div class="rc-section-label">Order Details</div>
+        <div class="rc-order-details">${escHtml(o.order_details || '—')}</div>
+      </div>
+      <div class="rc-response-wrap">
+        <div class="rc-section-label" style="padding:0 0 5px">Customer Said</div>
+        <div class="rc-response-bubble ${hasResponse ? '' : 'no-speech'}">
+          ${hasResponse
+            ? escHtml(o.speech_result)
+            : `<span style="font-size:12px">${st === 'pending' ? '⏳ Awaiting response…' : '🔇 No speech captured'}</span>`}
+        </div>
+      </div>
+      <div class="rc-footer">
+        <div class="rc-meta">
+          ${badge(st)}
+          <span class="rc-lang-tag">${langLabel[o.language] || o.language}</span>
+          <span class="rc-svc-tag">${svcIcon[o.service_type] || '📦'}</span>
+        </div>
+        <div class="rc-time">${fmtTime(o.created_at)}</div>
+      </div>
+      <div class="intent-icon" title="Intent: ${o.intent || 'unknown'}">${intIcon}</div>
+    </div>`;
+  }).join('');
+}
+
+function avatarColor(name, idx) {
+  const palette = [
+    ['#00e5ff','#7c4dff'], ['#00e676','#00b8cc'], ['#ffab00','#ff6d00'],
+    ['#ff4081','#7c4dff'], ['#40c4ff','#00e676'], ['#b39ddb','#40c4ff'],
+  ];
+  let h = 0;
+  for (let i = 0; i < (name||'').length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff;
+  return palette[h % palette.length][idx];
+}
+
+function renderTable(orders) {
+  const tbody = document.getElementById('ordersBody');
+  if (!orders.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><span class="emoji">📭</span><h3>No calls yet</h3></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = orders.map(o => `
+    <tr style="cursor:pointer" onclick="openModal('${o.order_id}')">
+      <td>${escHtml(o.order_id)}</td>
+      <td>${escHtml(o.customer_name)}</td>
+      <td style="font-family:var(--font-mono);font-size:12px">${escHtml(o.customer_phone)}</td>
+      <td>${svcIcon[o.service_type] || '📦'} ${o.service_type}</td>
+      <td style="font-family:var(--font-mono);font-size:11px">${langLabel[o.language] || o.language}</td>
+      <td>${badge(o.status)}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--text3)"
+          title="${escHtml(o.speech_result||'—')}">${escHtml(o.speech_result || '—')}</td>
+      <td style="font-family:var(--font-mono);font-size:11px;color:var(--text3);white-space:nowrap">${fmtTime(o.created_at)}</td>
+    </tr>`).join('');
+}
+
+function filterOrders(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function searchOrders(q) { applyFilters(q); }
+
+function applyFilters(q) {
+  const query = (q || document.getElementById('searchInput').value || '').toLowerCase();
+  let filtered = allOrders;
+  if (currentFilter !== 'all') filtered = filtered.filter(o => o.status === currentFilter);
+  if (query) filtered = filtered.filter(o =>
+    (o.customer_name || '').toLowerCase().includes(query) ||
+    (o.order_id || '').toLowerCase().includes(query) ||
+    (o.customer_phone || '').includes(query)
+  );
+  renderAll(filtered);
+}
+
+async function openModal(orderId) {
+  const o = allOrders.find(x => x.order_id === orderId);
+  if (!o) return;
+
+  const st = o.status || 'pending';
+  const hasResponse = o.speech_result && o.speech_result.trim();
+
+  // Fetch call logs for this order
+  let logsHtml = '';
+  try {
+    const resp = await fetch(`${API}/orders/${orderId}/logs`);
+    const logs = await resp.json();
+    if (logs.length) {
+      logsHtml = `<div class="modal-field"><div class="modal-field-label">Call Logs</div>
+        <div style="max-height:160px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:11px;font-family:var(--font-mono)">
+        ${logs.map(l => `<div style="padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">${fmtTime(l.created_at)}</span> <span style="color:var(--cyan)">${l.event_type}</span> ${escHtml(l.event_data||'')}</div>`).join('')}
+        </div></div>`;
+    }
+  } catch(e) { logsHtml = ''; }
+
+  document.getElementById('modalTitle').innerHTML =
+    `<span style="color:var(--text3);font-size:13px;font-family:var(--font-mono)">#${escHtml(o.order_id)}</span>`;
+
+  document.getElementById('modalBody').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+      <div class="rc-avatar" style="width:56px;height:56px;font-size:22px;border-radius:16px;
+           background:linear-gradient(135deg,${avatarColor(o.customer_name,0)},${avatarColor(o.customer_name,1)});color:#fff;
+           display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;flex-shrink:0">
+        ${initials(o.customer_name)}
+      </div>
+      <div>
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:800">${escHtml(o.customer_name)}</div>
+        <div style="font-family:var(--font-mono);font-size:12px;color:var(--text3)">${escHtml(o.customer_phone)}</div>
+      </div>
+      <div style="margin-left:auto">${badge(st)}</div>
+    </div>
+    <div class="modal-response-big" style="${!hasResponse ? 'font-style:normal;color:var(--text3)' : ''}">
+      <div class="inner">
+        ${hasResponse ? escHtml(o.speech_result) : (st === 'pending' ? '⏳ Awaiting response…' : '🔇 No speech captured')}
+      </div>
+    </div>
+    <div class="modal-grid">
+      <div class="modal-field">
+        <div class="modal-field-label">Order ID</div>
+        <div class="modal-field-value mono">${escHtml(o.order_id)}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">Intent Detected</div>
+        <div class="modal-field-value" style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">${intentIcon[o.intent] || '—'}</span>
+          <span style="font-family:var(--font-mono);font-size:12px">${o.intent || 'unknown'}</span>
+        </div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">Service Type</div>
+        <div class="modal-field-value">${svcIcon[o.service_type] || '📦'} ${o.service_type || '—'}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">Language</div>
+        <div class="modal-field-value">${langLabel[o.language] || o.language || '—'}</div>
+      </div>
+      <div class="modal-field" style="grid-column:span 2">
+        <div class="modal-field-label">Timestamp</div>
+        <div class="modal-field-value mono">${fmtTime(o.created_at)}</div>
+      </div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-field-label">Order Details (as spoken to customer)</div>
+      <div class="modal-field-value" style="font-size:13px;line-height:1.6">${escHtml(o.order_details || '—')}</div>
+    </div>
+    ${o.notes ? `<div class="modal-field">
+      <div class="modal-field-label">Notes</div>
+      <div class="modal-field-value mono" style="font-size:11px;color:var(--text3)">${escHtml(o.notes)}</div>
+    </div>` : ''}
+    ${o.scheduled_label ? `<div class="modal-field">
+      <div class="modal-field-label">Scheduled Callback</div>
+      <div class="modal-field-value mono" style="color:var(--violet)">🔄 ${escHtml(o.scheduled_label)}</div>
+    </div>` : ''}
+    ${logsHtml}
+  `;
+
+  document.getElementById('detailModal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('detailModal').classList.remove('active');
+}
+
+function closeModalOnBg(e) {
+  if (e.target === document.getElementById('detailModal')) closeModal();
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+async function loadScheduled() {
+  try {
+    const resp = await fetch(`${API}/scheduled`);
+    const jobs = await resp.json();
+    const container = document.getElementById('scheduledContainer');
+    if (!jobs.length) {
+      container.innerHTML = `<div class="empty-state" style="padding:40px"><span class="emoji">📅</span><h3>No scheduled callbacks</h3></div>`;
+      return;
+    }
+    container.innerHTML = `<table class="jobs-table"><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Run At (IST)</th><th>Language</th><th>Action</th></tr></thead><tbody>` +
+      jobs.map(j => `<tr>
+        <td style="font-family:var(--font-mono);font-size:11px">${escHtml(j.job_id)}</td>
+        <td>${escHtml(j.customer_name||'—')}</td>
+        <td>${escHtml(j.customer_phone||'—')}</td>
+        <td>${fmtTime(j.run_at)}</td>
+        <td>${langLabel[j.language]||j.language}</td>
+        <td><button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="cancelJob('${j.job_id}')">Cancel</button></td>
+      </tr>`).join('') + '</tbody></table>';
+  } catch (e) {
+    addLog('⚠️', `Could not load scheduled jobs: ${e.message}`);
+  }
+}
+
+async function cancelJob(jobId) {
+  if (!confirm('Cancel this scheduled callback?')) return;
+  try {
+    const resp = await fetch(`${API}/scheduled/${jobId}`, { method: 'DELETE' });
+    const data = await resp.json();
+    if (data.success) {
+      toast('✅ Callback cancelled', 'success');
+      loadScheduled();
+      loadStats();
+    }
+  } catch (e) {
+    toast('❌ Failed to cancel', 'error');
+  }
+}
+
+async function exportCSV() {
+  try {
+    const resp = await fetch(`${API}/export/csv`);
+    if (!resp.ok) throw new Error('No data');
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `voicebot_orders_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('✅ CSV exported!', 'success');
+  } catch (e) {
+    toast('❌ Export failed: ' + e.message, 'error');
+  }
+}
+
+async function loadStats() {
+  try {
+    const resp = await fetch(`${API}/stats`);
+    const s = await resp.json();
+    ['total','confirmed','cancelled','pending','rescheduled','no_response'].forEach(k => {
+      const el = document.getElementById('stat-' + k);
+      if (el) el.textContent = s[k] ?? 0;
+    });
+  } catch {
+    ['total','confirmed','cancelled','pending','rescheduled','no_response'].forEach(k => {
+      const el = document.getElementById('stat-' + k);
+      if (el) el.textContent = '0';
+    });
+  }
+}
+
+async function loadHealth() {
+  try {
+    const resp = await fetch(`${API}/health`);
+    const data = await resp.json();
+    const el = document.getElementById('apiStatus');
+    el.className = 'api-status online';
+    el.textContent = '● API Online';
+    toast(`✅ API v${data.version} | Twilio: ${data.twilio_configured ? 'OK' : 'MISSING'} | OpenAI: ${data.openai_configured ? 'OK' : 'OFF'}`, 'success');
+    addLog('🔍', `Health check: v${data.version}, Twilio=${data.twilio_configured}, OpenAI=${data.openai_configured}`);
+  } catch (e) {
+    const el = document.getElementById('apiStatus');
+    el.className = 'api-status offline';
+    el.textContent = '● API Offline';
+    toast('❌ API unreachable', 'error');
+  }
+}
+
+function addLog(icon, msg) {
+  const feed = document.getElementById('logFeed');
+  const time = new Date().toLocaleTimeString('en-IN', { hour12: false });
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<div class="log-time">${time}</div><div class="log-icon">${icon}</div><div class="log-msg">${msg}</div>`;
+  feed.insertBefore(entry, feed.firstChild);
+  while (feed.children.length > 50) feed.removeChild(feed.lastChild);
+}
+
+function clearLogs() {
+  document.getElementById('logFeed').innerHTML = '';
+  addLog('🗑', 'Logs cleared');
+}
+
+function toast(msg, type = 'info') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  const icons = { success:'✅', error:'❌', info:'ℹ️' };
+  t.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadStats();
+  loadHealth();
+  setInterval(() => { loadStats(); loadHealth(); }, 15000);
+  addLog('🚀', 'VoiceBot AI dashboard initialized');
+  addLog('🔌', `API endpoint: <strong>${API}</strong>`);
+});
+</script>
+</body>
+</html>

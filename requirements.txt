@@ -1,0 +1,21 @@
+# VoiceBot AI — Python Dependencies
+
+# ── Web Framework ──
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+
+# ── Twilio ──
+twilio>=8.12.0
+
+# ── Environment ──
+python-dotenv>=1.0.0
+
+# ── Scheduling ──
+apscheduler>=3.10.4
+
+# ── AI / NLP (Optional but recommended) ──
+openai>=1.12.0
+
+# ── Async HTTP ──
+httpx>=0.23.0
